@@ -1,4 +1,4 @@
-const NOTES = {
+export const NOTES = {
   'c0': 16.35,
   'c#0': 17.32,
   'db0': 17.32,
@@ -152,8 +152,4 @@ const NOTES = {
   'a#8': 7458.62,
   'bb8': 7458.62,
   'b8': 7902.13,
-};
-
-module.exports = {
-  NOTES,
 };

@@ -1,4 +1,4 @@
-const SimpleSynth = require('../src/simple-synth/simple-synth');
+const SimpleSynth = require('../src/modules/simple-synth/simple-synth');
 
 const startBtn = document.querySelector('#start-btn');
 const stopBtn = document.querySelector('#stop-btn');
