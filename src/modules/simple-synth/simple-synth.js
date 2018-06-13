@@ -1,6 +1,6 @@
 import * as constants from './constants';
 
-const SimpleSynth = (function() {
+export const SimpleSynth = (function() {
   const defaultSettings = {
     type: 'sine',
     fadeTime: 0.05,
@@ -108,5 +108,3 @@ const SimpleSynth = (function() {
     stopAll,
   };
 }());
-
-module.exports = SimpleSynth;

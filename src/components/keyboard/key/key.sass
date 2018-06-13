@@ -1,0 +1,17 @@
+@import '../../../assets/styles/variables.sass'
+	
+.key
+	display: inline-block
+	width: $key-width
+	height: $key-height
+	border: 1px solid black
+
+	&.active
+		box-shadow: inset 0px -1px 1px 1px rgba(0,0,0,0.75)
+
+	&.sharp
+		position: absolute
+		width: $key-sharp-width
+		height: $key-sharp-height
+		transform: translateX(-$key-sharp-width / 2)
+		background-color: #000
