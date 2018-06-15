@@ -7,15 +7,18 @@ import './keyboard.sass';
 
 const template = `
 	<section class="keyboard">
-		<ul class="keyboard__visual">
+		<ul class="keyboard__visual" ref="historyBoard">
 			<li
 				v-bind:class="{sharp: note.name.indexOf('#') !== -1 }"
+				v-bind:id="note.name"
 				v-for="note in playedNotes"
 			>
 				<ul class="keyboard__visual__col">
 					<li
 						class="keyboard__visual__col__item"
-						v-for="index in note.quantity"
+						v-for="item in note.history"
+						:key="item.id"
+						v-bind:style="{ height: item.height + 'px', transform: 'translateY(' + item.translate + 'px)' }"
 					></li>
 				</ul>
 			</li>
@@ -42,33 +45,153 @@ const notes = [
   'c8', 'c#8', 'd8', 'd#8', 'e8', 'f8', 'f#8', 'g8', 'g#8', 'a8', 'a#8', 'b8',
 ];
 
+const keyMapping = {
+  'q': 0,   // c
+  '2': 1,   // c#
+  'w': 2,   // d
+  '3': 3,   // d#
+  'e': 4,   // e
+  'r': 5,   // f
+  '5': 6,   // f#
+  't': 7,   // g
+  '6': 8,   // g#
+  'y': 9,   // a
+  '7': 10,  // a#
+  'u': 11,  // b,
+  'z': 12,   // c
+  's': 13,   // c#
+  'x': 14,   // d
+  'd': 15,   // d#
+  'c': 16,   // e
+  'v': 17,   // f
+  'g': 18,   // f#
+  'b': 19,   // g
+  'h': 20,   // g#
+  'n': 21,   // a
+  'j': 22,  // a#
+  'm': 23,  // b
+};
+
 export const Keyboard = Vue.component('keyboard', {
 	name: 'keyboard',
 	template,
 	components: { Key },
 	data: function() {
 		return {
-			notes,
-			playedNotes: notes.map(note => ({
-				name: note,
-				quantity: 0,
-			})),
+      notes,
+      playedNotes: notes.map(note => ({
+        name: note,
+        quantity: 0,
+        history: [],
+      })),
+			baseNoteIndex: 24,
+      keyboardSize: 24,
+      pressedKeys: [],
+      noteAnimationTimeout: 0,
 		};
 	},
+  computed: {},
 	methods: {
 		addPlayedNote: function (playedNote) {
+		  if (!playedNote) {
+		    return;
+      }
 			this.playedNotes = this.playedNotes.map(note => ({
 				name: note.name,
+        history: note.name === playedNote ?
+          [...note.history, {
+            id: new Date().getTime(),
+            height: 5,
+            translate: 0,
+          }]
+          :
+          note.history,
 				quantity: note.name === playedNote ? note.quantity + 1 : note.quantity,
 			}));
 		},
     mapKeyToNote: function (key) {
-
+      const supportedKeys = Object.keys(keyMapping);
+      if (supportedKeys.indexOf(key) === -1) {
+        return;
+      }
+      const noteIndex = keyMapping[key] + this.baseNoteIndex;
+      const playedNote = this.notes[noteIndex];
+      return playedNote;
+    },
+    removeNotVisibleNotes: function() {
+      this.playedNotes = this.playedNotes.map(note => {
+        const noteHistory = note.history;
+        const changedHistory = noteHistory.filter(item => {
+          return Math.abs(item.translate) - item.height < this.$refs.historyBoard.clientHeight;
+        });
+        note.history = changedHistory;
+        return note;
+      });
+    },
+    increasePlayedNotesHeight: function() {
+		  this.playedNotes = this.playedNotes.map(playedNote => {
+		    if (this.pressedKeys.find(key => this.mapKeyToNote(key.value) === playedNote.name)) {
+		      const history = playedNote.history;
+          const lastAdded = history[history.length - 1];
+          if (lastAdded) {
+            lastAdded.height += 5;
+          }
+          playedNote.history = history;
+        }
+        return playedNote;
+      });
+    },
+    moveNoteItemsUp: function() {
+      this.playedNotes = this.playedNotes.map(note => {
+        const noteHistory = note.history;
+        if (!noteHistory) {
+          return note;
+        }
+        const changedHistory = noteHistory.filter(item => {
+          return Math.abs(item.translate) - item.height < this.$refs.historyBoard.clientHeight;
+        });
+        const lastMoved = this.pressedKeys.find(key => this.mapKeyToNote(key.value) === note.name) ?
+          changedHistory.length - 1 : changedHistory.length;
+        changedHistory.forEach((item, itemIndex) => {
+          if (itemIndex < lastMoved) {
+            changedHistory[itemIndex].translate -= 5;
+          }
+        });
+        return {
+          ...note,
+          history: changedHistory,
+        };
+      });
+    },
+    animateNotes: function() {
+		  this.noteAnimationTimeout = setTimeout(() => {
+        //this.removeNotVisibleNotes();
+        this.increasePlayedNotesHeight();
+        this.moveNoteItemsUp();
+        this.animateNotes();
+      }, 10);
     },
 	},
   created: function() {
 	  document.addEventListener('keydown', (e) => {
-      console.log(e.key);
+	    const key = e.key;
+	    const note = this.mapKeyToNote(key);
+	    if (!this.pressedKeys.find(pressedKey => pressedKey.value === key)) {
+	      this.pressedKeys.push({
+          value: key,
+          pressTime: new Date().getTime(),
+        });
+        this.addPlayedNote(note);
+        SimpleSynth.play(note);
+      }
     });
+
+	  document.addEventListener('keyup', (e) => {
+	    const key = e.key;
+	    this.pressedKeys = this.pressedKeys.filter(pressedKey => pressedKey.value !== key);
+	    SimpleSynth.stop(this.mapKeyToNote(key));
+    });
+
+	  this.animateNotes();
   },
 });
