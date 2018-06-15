@@ -19,7 +19,7 @@ const template = `
 						v-for="item in note.history"
 						:key="item.id"
 						v-bind:style="{ height: item.height + 'px', transform: 'translateY(' + item.translate + 'px)' }"
-					></li>
+					/>
 				</ul>
 			</li>
 		</ul>
@@ -28,7 +28,7 @@ const template = `
 				v-for="note in notes"
 				v-bind:note="note"
 				v-bind:onPlay="addPlayedNote"
-			></key>
+		  />	
 		</ul>
 	</section>
 `;
@@ -84,9 +84,10 @@ export const Keyboard = Vue.component('keyboard', {
         quantity: 0,
         history: [],
       })),
-			baseNoteIndex: 24,
+			baseNoteIndex: 36,
       keyboardSize: 24,
       pressedKeys: [],
+      sustainedKeys: [],
       noteAnimationTimeout: 0,
 		};
 	},
@@ -117,16 +118,6 @@ export const Keyboard = Vue.component('keyboard', {
       const noteIndex = keyMapping[key] + this.baseNoteIndex;
       const playedNote = this.notes[noteIndex];
       return playedNote;
-    },
-    removeNotVisibleNotes: function() {
-      this.playedNotes = this.playedNotes.map(note => {
-        const noteHistory = note.history;
-        const changedHistory = noteHistory.filter(item => {
-          return Math.abs(item.translate) - item.height < this.$refs.historyBoard.clientHeight;
-        });
-        note.history = changedHistory;
-        return note;
-      });
     },
     increasePlayedNotesHeight: function() {
 		  this.playedNotes = this.playedNotes.map(playedNote => {
@@ -165,31 +156,51 @@ export const Keyboard = Vue.component('keyboard', {
     },
     animateNotes: function() {
 		  this.noteAnimationTimeout = setTimeout(() => {
-        //this.removeNotVisibleNotes();
         this.increasePlayedNotesHeight();
         this.moveNoteItemsUp();
         this.animateNotes();
       }, 10);
     },
+    handleKeyPress: function(key) {
+      if (key === ' ') {
+
+      } else {
+        const note = this.mapKeyToNote(key);
+        if (!note) {
+          return;
+        }
+        if (!this.pressedKeys.find(pressedKey => pressedKey.value === key)) {
+          this.pressedKeys.push({
+            value: key,
+            pressTime: new Date().getTime(),
+          });
+          this.addPlayedNote(note);
+          SimpleSynth.play(note);
+        }
+      }
+    },
+    handleKeyRelease: function(key) {
+      if (key === ' ') {
+
+      } else {
+        const note = this.mapKeyToNote(key);
+        if (!note || this.sustainedKeys.find(sustainedKey => sustainedKey.value === key)) {
+          return;
+        }
+        this.pressedKeys = this.pressedKeys.filter(pressedKey => pressedKey.value !== key);
+        SimpleSynth.stop(note);
+      }
+    },
 	},
   created: function() {
 	  document.addEventListener('keydown', (e) => {
 	    const key = e.key;
-	    const note = this.mapKeyToNote(key);
-	    if (!this.pressedKeys.find(pressedKey => pressedKey.value === key)) {
-	      this.pressedKeys.push({
-          value: key,
-          pressTime: new Date().getTime(),
-        });
-        this.addPlayedNote(note);
-        SimpleSynth.play(note);
-      }
+      this.handleKeyPress(key);
     });
 
 	  document.addEventListener('keyup', (e) => {
 	    const key = e.key;
-	    this.pressedKeys = this.pressedKeys.filter(pressedKey => pressedKey.value !== key);
-	    SimpleSynth.stop(this.mapKeyToNote(key));
+      this.handleKeyRelease(key);
     });
 
 	  this.animateNotes();

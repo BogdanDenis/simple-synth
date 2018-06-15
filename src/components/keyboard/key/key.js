@@ -7,9 +7,7 @@ const template = `
 		class="key"
 		v-bind:class="classes"
 		v-on:click="onClick(note)"
-	>
-		{{ note }}
-	</li>
+	/>
 `;
 
 export const Key = Vue.component('key', {
