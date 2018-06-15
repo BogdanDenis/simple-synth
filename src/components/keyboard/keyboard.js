@@ -72,6 +72,8 @@ const keyMapping = {
   'm': 23,  // b
 };
 
+const animationSpeed = 1;
+
 export const Keyboard = Vue.component('keyboard', {
 	name: 'keyboard',
 	template,
@@ -125,7 +127,7 @@ export const Keyboard = Vue.component('keyboard', {
 		      const history = playedNote.history;
           const lastAdded = history[history.length - 1];
           if (lastAdded) {
-            lastAdded.height += 5;
+            lastAdded.height += animationSpeed;
           }
           playedNote.history = history;
         }
@@ -145,7 +147,7 @@ export const Keyboard = Vue.component('keyboard', {
           changedHistory.length - 1 : changedHistory.length;
         changedHistory.forEach((item, itemIndex) => {
           if (itemIndex < lastMoved) {
-            changedHistory[itemIndex].translate -= 5;
+            changedHistory[itemIndex].translate -= animationSpeed;
           }
         });
         return {
