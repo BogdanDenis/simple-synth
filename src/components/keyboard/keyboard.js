@@ -1,4 +1,9 @@
 import Vue from 'vue';
+import {
+  difference,
+  union,
+  pull,
+} from 'lodash';
 
 import { Key } from './key/key';
 import { SimpleSynth } from '../../modules';
@@ -86,14 +91,19 @@ export const Keyboard = Vue.component('keyboard', {
         quantity: 0,
         history: [],
       })),
-			baseNoteIndex: 36,
+			baseNoteIndex: 48,
       keyboardSize: 24,
       pressedKeys: [],
       sustainedKeys: [],
+      isSustained: false,
       noteAnimationTimeout: 0,
 		};
 	},
-  computed: {},
+  computed: {
+    pressedAndSustained: function() {
+      return union(this.pressedKeys, this.sustainedKeys);
+    }
+  },
 	methods: {
 		addPlayedNote: function (playedNote) {
 		  if (!playedNote) {
@@ -123,7 +133,7 @@ export const Keyboard = Vue.component('keyboard', {
     },
     increasePlayedNotesHeight: function() {
 		  this.playedNotes = this.playedNotes.map(playedNote => {
-		    if (this.pressedKeys.find(key => this.mapKeyToNote(key.value) === playedNote.name)) {
+		    if (this.pressedAndSustained.find(key => this.mapKeyToNote(key) === playedNote.name)) {
 		      const history = playedNote.history;
           const lastAdded = history[history.length - 1];
           if (lastAdded) {
@@ -143,7 +153,7 @@ export const Keyboard = Vue.component('keyboard', {
         const changedHistory = noteHistory.filter(item => {
           return Math.abs(item.translate) - item.height < this.$refs.historyBoard.clientHeight;
         });
-        const lastMoved = this.pressedKeys.find(key => this.mapKeyToNote(key.value) === note.name) ?
+        const lastMoved = this.pressedAndSustained.find(key => this.mapKeyToNote(key) === note.name) ?
           changedHistory.length - 1 : changedHistory.length;
         changedHistory.forEach((item, itemIndex) => {
           if (itemIndex < lastMoved) {
@@ -165,33 +175,45 @@ export const Keyboard = Vue.component('keyboard', {
     },
     handleKeyPress: function(key) {
       if (key === ' ') {
-
-      } else {
-        const note = this.mapKeyToNote(key);
-        if (!note) {
-          return;
+        this.isSustained = true;
+        this.sustainedKeys = union(this.sustainedKeys, this.pressedKeys);
+      }
+      const note = this.mapKeyToNote(key);
+      if (!note) {
+        return;
+      }
+      if (!this.pressedAndSustained.find(pressedKey => pressedKey === key)) {
+        this.pressedKeys.push(key);
+        if (this.isSustained) {
+          this.sustainedKeys.push(key);
         }
-        if (!this.pressedKeys.find(pressedKey => pressedKey.value === key)) {
-          this.pressedKeys.push({
-            value: key,
-            pressTime: new Date().getTime(),
-          });
-          this.addPlayedNote(note);
-          SimpleSynth.play(note);
-        }
+        this.addPlayedNote(note);
+        SimpleSynth.play(note);
       }
     },
     handleKeyRelease: function(key) {
       if (key === ' ') {
-
-      } else {
-        const note = this.mapKeyToNote(key);
-        if (!note || this.sustainedKeys.find(sustainedKey => sustainedKey.value === key)) {
-          return;
-        }
-        this.pressedKeys = this.pressedKeys.filter(pressedKey => pressedKey.value !== key);
-        SimpleSynth.stop(note);
+        this.isSustained = false;
+        const notPressedKeys = difference(this.sustainedKeys, this.pressedKeys);
+        notPressedKeys.forEach(notPressedKey => {
+          const note = this.mapKeyToNote(notPressedKey);
+          if (!note) {
+            return;
+          }
+          SimpleSynth.stop(note);
+          pull(this.pressedKeys, notPressedKey);
+        });
+        this.sustainedKeys = [];
       }
+      this.pressedKeys = this.pressedKeys.filter(pressedKey => pressedKey !== key);
+      if (this.sustainedKeys.find(sustainedKey => sustainedKey === key)) {
+        return;
+      }
+      const note = this.mapKeyToNote(key);
+      if (!note) {
+        return;
+      }
+      SimpleSynth.stop(note);
     },
 	},
   created: function() {
