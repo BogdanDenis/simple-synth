@@ -79,9 +79,6 @@ export const Keyboard = Vue.component('keyboard', {
           note.history,
 			}));
 		},
-    mapKeyToNote: function (key) {
-      
-    },
     increasePlayedNotesHeight: function() {
 		  this.playedNotes = this.playedNotes.map(playedNote => {
 		    if (this.piano.noteIsBeingPlayed(playedNote.name)) {
