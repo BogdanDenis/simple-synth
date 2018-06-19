@@ -6,7 +6,10 @@ import {
 } from 'lodash';
 
 import { Key } from './key/key';
-import { SimpleSynth } from '../../modules';
+import {
+  SimpleSynth,
+  Looper,
+} from '../../modules';
 
 import './keyboard.sass';
 
@@ -91,12 +94,13 @@ export const Keyboard = Vue.component('keyboard', {
         quantity: 0,
         history: [],
       })),
-			baseNoteIndex: 48,
+			baseNoteIndex: 36,
       keyboardSize: 24,
       pressedKeys: [],
       sustainedKeys: [],
       isSustained: false,
       noteAnimationTimeout: 0,
+      looper: new Looper(SimpleSynth),
 		};
 	},
   computed: {
@@ -174,6 +178,12 @@ export const Keyboard = Vue.component('keyboard', {
       }, 10);
     },
     handleKeyPress: function(key) {
+      if (key === 'Control') {
+        this.looper.play();
+      }
+      if (key === 'Enter') {
+        this.looper.startRecording();
+      }
       if (key === ' ') {
         this.isSustained = true;
         this.sustainedKeys = union(this.sustainedKeys, this.pressedKeys);
@@ -192,6 +202,9 @@ export const Keyboard = Vue.component('keyboard', {
       }
     },
     handleKeyRelease: function(key) {
+      if (key === 'Shift') {
+        this.looper.stopRecording();
+      }
       if (key === ' ') {
         this.isSustained = false;
         const notPressedKeys = difference(this.sustainedKeys, this.pressedKeys);
