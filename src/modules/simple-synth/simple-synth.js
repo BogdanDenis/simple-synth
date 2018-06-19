@@ -95,6 +95,9 @@ export const SimpleSynth = (function() {
     playedNotes.forEach(note => {
       if (note.freq === frequency) {
         note.gain.gain.setTargetAtTime(0, context.currentTime, mergedSettings.fadeTime);
+        setTimeout(() => {
+          note.gain.disconnect();
+        }, (mergedSettings.fadeTime + 1) * 1000);
       }
     });
   };

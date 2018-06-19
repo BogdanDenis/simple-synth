@@ -10,6 +10,7 @@ import { Key } from './key/key';
 import {
   SimpleSynth,
   Piano,
+  Looper,
 } from '../../modules';
 import { NOTES } from '../../modules/piano/constants';
 
@@ -95,6 +96,7 @@ export const Keyboard = Vue.component('keyboard', {
       })),
       noteAnimationTimeout: 0,
       piano: new Piano(SimpleSynth),
+      looper: new Looper(SimpleSynth),
 		};
 	},
   computed: {
@@ -163,6 +165,15 @@ export const Keyboard = Vue.component('keyboard', {
       }, 10);
     },
     handleKeyPress: function(key) {
+      if (key === 'Control') {
+        this.looper.play();
+      }
+      if (key === 'Shift') {
+        this.looper.stopRecording();
+      }
+      if (key === 'Enter') {
+        this.looper.startRecording();
+      }
       this.piano.keyPress(key);
     },
     handleKeyRelease: function(key) {
