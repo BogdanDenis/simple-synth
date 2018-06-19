@@ -1,17 +1,24 @@
 import Vue from 'vue';
 
-import { Keyboard } from './components';
+import {
+	Keyboard,
+  Dashboard,
+} from './components';
 
 import './App.sass';
 
 const template = `
 	<div id="app">
-		<keyboard></keyboard>
+	  <Dashboard />
+		<keyboard />
 	</div>
 `;
 
 export default Vue.component('app', {
 	name: 'App',
 	template,
-	components: { Keyboard },
+	components: {
+	  Keyboard,
+    Dashboard,
+  },
 });

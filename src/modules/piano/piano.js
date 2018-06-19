@@ -52,6 +52,11 @@ export class Piano {
 		};
 	}
 
+	setBaseNote(note) {
+	  this.baseNote = note;
+	  console.log(this.baseNote);
+  }
+
 	computePressedAndSustained() {
 		this.pressedAndSustained = union(this.pressedKeys, this.sustainedKeys);
 	}
